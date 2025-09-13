@@ -1,189 +1,97 @@
-// widget.js
-
+// Dữ liệu demo
 const DATA = [
-  {name:"ChatGPT", category:"AI Assistant", img:"https://via.placeholder.com/120", url:"https://chat.openai.com", desc:"AI chatbot powered by GPT."},
-  {name:"MidJourney", category:"AI Art", img:"https://via.placeholder.com/120", url:"https://midjourney.com", desc:"AI image generator."},
-  {name:"Runway", category:"Video Editing", img:"https://via.placeholder.com/120", url:"https://runwayml.com", desc:"AI-powered video editor."}
+  { name: "Tool A", category: "AI Generator", img: "https://via.placeholder.com/300x150?text=Tool+A", url: "#", desc: "Description A" },
+  { name: "Tool B", category: "AI Writer", img: "https://via.placeholder.com/300x150?text=Tool+B", url: "#", desc: "Description B" },
+  { name: "Tool C", category: "AI Generator", img: "https://via.placeholder.com/300x150?text=Tool+C", url: "#", desc: "Description C" },
+  { name: "Tool D", category: "AI Chatbot", img: "https://via.placeholder.com/300x150?text=Tool+D", url: "#", desc: "Description D" }
 ];
 
 let favorites = [];
 let currentPage = 1;
-const ITEMS_PER_PAGE = 6;
+const itemsPerPage = 3;
 
+// Render danh sách card
 function renderCards() {
-  const container = document.getElementById("cardContainer");
-  if (!container) {
-    console.error("widget.js: element #cardContainer not found");
-    return;
-  }
+  const container = document.getElementById("cardsContainer");
+  const filter = document.getElementById("categoryFilter").value;
+  let data = filter === "all" ? DATA : DATA.filter(d => d.category === filter);
+
+  const start = (currentPage - 1) * itemsPerPage;
+  const paginatedData = data.slice(start, start + itemsPerPage);
+
   container.innerHTML = "";
-
-  const inputSearch = document.getElementById("searchInput");
-  const selectCat = document.getElementById("categoryFilter");
-  if (!inputSearch || !selectCat) {
-    console.error("widget.js: searchInput or categoryFilter element missing");
-    return;
-  }
-  const search = inputSearch.value.toLowerCase();
-  const category = selectCat.value;
-
-  const filtered = DATA.filter(d =>
-    (category === "all" || d.category === category) &&
-    (d.name.toLowerCase().includes(search) || d.desc.toLowerCase().includes(search))
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  if (currentPage > totalPages) currentPage = totalPages;
-
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pageItems = filtered.slice(start, start + ITEMS_PER_PAGE);
-
-  pageItems.forEach(d => {
+  paginatedData.forEach(item => {
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "travel-card";
     card.innerHTML = `
-      <img src="${d.img}" alt="${d.name}" />
-      <span class="favorite-icon ${favorites.includes(d.name) ? "favorited" : ""}" onclick="toggleFavorite(this, '${d.name}')">★</span>
-      <h2>${d.name}</h2>
-      <p>${d.desc}</p>
-      <a href="${d.url}" target="_blank" rel="noopener">Visit</a>
+      <img src="${item.img}" alt="${item.name}" />
+      <h3><a href="${item.url}" target="_blank">${item.name}</a></h3>
+      <p>${item.desc}</p>
+      <span class="favorite-icon ${favorites.includes(item.name) ? "favorited" : ""}" onclick="toggleFavorite('${item.name}')">♥</span>
     `;
     container.appendChild(card);
   });
 
-  renderPagination(totalPages);
-  updateFavoriteIcons();
+  renderPagination(data.length);
 }
 
-function renderPagination(totalPages) {
-  const paginationEl = document.getElementById("pagination");
-  if (!paginationEl) {
-    console.error("widget.js: #pagination element missing");
-    return;
+// Toggle favorite
+function toggleFavorite(name) {
+  if (favorites.includes(name)) {
+    favorites = favorites.filter(f => f !== name);
+  } else {
+    favorites.push(name);
   }
-  paginationEl.innerHTML = "";
-
-  // prev button
-  const prev = document.createElement("button");
-  prev.textContent = "Prev";
-  prev.disabled = currentPage <= 1;
-  prev.onclick = () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderCards();
-    }
-  };
-  paginationEl.appendChild(prev);
-
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    if (i === currentPage) {
-      btn.className = "active";
-      btn.disabled = true;
-    }
-    btn.onclick = () => {
-      currentPage = i;
-      renderCards();
-    };
-    paginationEl.appendChild(btn);
-  }
-
-  const next = document.createElement("button");
-  next.textContent = "Next";
-  next.disabled = currentPage >= totalPages;
-  next.onclick = () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderCards();
-    }
-  };
-  paginationEl.appendChild(next);
+  renderCards();
+  renderFavorites();
 }
 
-function toggleFavorite(el, name) {
-  if (!name) return;
-  const idx = favorites.indexOf(name);
-  if (idx === -1) favorites.push(name);
-  else favorites.splice(idx, 1);
-
-  updateFavoriteSummary();
-  updateFavoriteIcons();
-}
-
-function updateFavoriteSummary() {
-  const summary = document.querySelector(".favorite-summary");
-  if (summary) {
-    summary.textContent = `★ Favorites (${favorites.length})`;
-  }
-}
-
-function updateFavoriteIcons() {
-  document.querySelectorAll(".favorite-icon").forEach(el => {
-    const n = el.getAttribute("data-name") || el.textContent;
-    if (n && favorites.includes(n)) {
-      el.classList.add("favorited");
-    } else {
-      el.classList.remove("favorited");
+// Render favorites
+function renderFavorites() {
+  const container = document.getElementById("favoritesContainer");
+  container.innerHTML = "";
+  favorites.forEach(name => {
+    const item = DATA.find(d => d.name === name);
+    if (item) {
+      const card = document.createElement("div");
+      card.className = "travel-card";
+      card.innerHTML = `
+        <img src="${item.img}" alt="${item.name}" />
+        <h3><a href="${item.url}" target="_blank">${item.name}</a></h3>
+        <p>${item.desc}</p>
+        <span class="favorite-icon favorited" onclick="toggleFavorite('${item.name}')">♥</span>
+      `;
+      container.appendChild(card);
     }
   });
 }
 
-function renderFavoriteList() {
-  const list = document.getElementById("favoriteList");
-  if (!list) return;
-  list.innerHTML = "";
-  if (favorites.length === 0) {
-    list.innerHTML = "<div>No favorites yet.</div>";
-  } else {
-    favorites.forEach(name => {
-      const item = document.createElement("div");
-      item.textContent = `★ ${name}`;
-      list.appendChild(item);
-    });
-  }
-}
+// Render pagination
+function renderPagination(totalItems) {
+  const container = document.getElementById("pagination");
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-function toggleFavoriteList() {
-  const list = document.getElementById("favoriteList");
-  if (!list) {
-    console.error("widget.js: #favoriteList missing");
-    return;
-  }
-  if (list.style.display === "block") {
-    list.style.display = "none";
-  } else {
-    list.style.display = "block";
-    renderFavoriteList();
+  container.innerHTML = "";
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.disabled = (i === currentPage);
+    btn.onclick = () => { currentPage = i; renderCards(); };
+    container.appendChild(btn);
   }
 }
 
 // Init
 (function init() {
-  document.addEventListener("DOMContentLoaded", () => {
-    const select = document.getElementById("categoryFilter");
-    const inputSearch = document.getElementById("searchInput");
-    if (!select || !inputSearch) {
-      console.error("widget.js: required filter/search elements missing at init");
-      return;
-    }
-    // build category options
-    const cats = Array.from(new Set(DATA.map(d => d.category)));
-    cats.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      select.appendChild(opt);
-    });
-    inputSearch.addEventListener("input", () => {
-      currentPage = 1;
-      renderCards();
-    });
-    select.addEventListener("change", () => {
-      currentPage = 1;
-      renderCards();
-    });
-    // initial render
-    renderCards();
+  console.log("Widget loaded OK from Cloudflare Worker");
+  const select = document.getElementById("categoryFilter");
+  const cats = Array.from(new Set(DATA.map(d => d.category)));
+  cats.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    select.appendChild(opt);
   });
+  select.onchange = () => { currentPage = 1; renderCards(); };
+  renderCards();
 })();
